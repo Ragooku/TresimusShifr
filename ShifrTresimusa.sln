@@ -1,31 +1,130 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.7.34024.191
-MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ShifrTresimusa", "ShifrTresimusa\ShifrTresimusa.vcxproj", "{C75DF982-2899-4317-B14D-58FFC154341C}"
-EndProject
-Global
-	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|x64 = Debug|x64
-		Debug|x86 = Debug|x86
-		Release|x64 = Release|x64
-		Release|x86 = Release|x86
-	EndGlobalSection
-	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{C75DF982-2899-4317-B14D-58FFC154341C}.Debug|x64.ActiveCfg = Debug|x64
-		{C75DF982-2899-4317-B14D-58FFC154341C}.Debug|x64.Build.0 = Debug|x64
-		{C75DF982-2899-4317-B14D-58FFC154341C}.Debug|x86.ActiveCfg = Debug|Win32
-		{C75DF982-2899-4317-B14D-58FFC154341C}.Debug|x86.Build.0 = Debug|Win32
-		{C75DF982-2899-4317-B14D-58FFC154341C}.Release|x64.ActiveCfg = Release|x64
-		{C75DF982-2899-4317-B14D-58FFC154341C}.Release|x64.Build.0 = Release|x64
-		{C75DF982-2899-4317-B14D-58FFC154341C}.Release|x86.ActiveCfg = Release|Win32
-		{C75DF982-2899-4317-B14D-58FFC154341C}.Release|x86.Build.0 = Release|Win32
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {12E0CC7A-2C50-4AA2-8B9E-8244AE39C723}
-	EndGlobalSection
-EndGlobal
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define ALPHABET_SIZE 26
+
+// Функция для создания таблицы Трисемуса
+void createTrisemusTable(char key[], char table[][ALPHABET_SIZE]) {
+    size_t keyLength = strlen(key);
+    char alphabet[ALPHABET_SIZE] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    size_t row, col, index = 0;
+
+    // Заполняем ключ в таблицу, удаляя повторяющиеся буквы
+    for (col = 0; col < keyLength; col++) {
+        char currentChar = toupper(key[col]);
+        int repeated = 0;
+
+        // Проверяем, не повторяется ли буква
+        for (size_t i = 0; i < col; i++) {
+            if (toupper(key[i]) == currentChar) {
+                repeated = 1;
+                break;
+            }
+        }
+
+        if (!repeated) {
+            table[0][index++] = currentChar;
+        }
+    }
+
+    // Заполняем оставшуюся часть таблицы алфавитом
+    for (col = 0; col < ALPHABET_SIZE; col++) {
+        char currentChar = alphabet[col];
+        int repeated = 0;
+
+        // Проверяем, не повторяется ли буква в ключе
+        for (size_t i = 0; i < keyLength; i++) {
+            if (toupper(key[i]) == currentChar) {
+                repeated = 1;
+                break;
+            }
+        }
+
+        if (!repeated) {
+            table[0][index++] = currentChar;
+        }
+    }
+
+    // Заполняем остальные строки таблицы
+    for (row = 1; row < ALPHABET_SIZE; row++) {
+        for (col = 0; col < ALPHABET_SIZE; col++) {
+            table[row][col] = table[0][(col + row) % ALPHABET_SIZE];
+        }
+    }
+}
+
+// Функция для шифрования текста
+void encrypt(char text[], char table[][ALPHABET_SIZE]) {
+    size_t length = strlen(text);
+
+    for (size_t i = 0; i < length; i++) {
+        if (isalpha(text[i])) {
+            char currentChar = toupper(text[i]);
+            size_t col = currentChar - 'A';
+
+            // Замена буквы на букву из того же столбца
+            text[i] = table[0][col];
+        }
+    }
+}
+
+// Функция для дешифрования текста
+void decrypt(char text[], char table[][ALPHABET_SIZE]) {
+    size_t length = strlen(text);
+
+    for (size_t i = 0; i < length; i++) {
+        if (isalpha(text[i])) {
+            char currentChar = toupper(text[i]);
+            size_t col = currentChar - 'A';
+
+            // Замена буквы на букву из того же столбца
+            for (size_t row = 1; row < ALPHABET_SIZE; row++) {
+                if (table[row][col] == currentChar) {
+                    text[i] = table[0][col];
+                    break;
+                }
+            }
+        }
+    }
+}
+
+// Функция для вывода таблицы
+void printTable(char table[][ALPHABET_SIZE]) {
+    for (size_t i = 0; i < ALPHABET_SIZE; i++) {
+        for (size_t j = 0; j < ALPHABET_SIZE; j++) {
+            printf("%c ", table[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+int main() {
+    char key[100];
+    char table[ALPHABET_SIZE][ALPHABET_SIZE];
+    char originalText[100];
+    char encryptedText[100];
+
+    printf("Введите ключевое слово: ");
+    scanf("%s", key);
+
+    createTrisemusTable(key, table);
+
+    printf("Таблица Трисемуса:\n");
+    printTable(table);
+
+    printf("\nВведите текст для шифрования: ");
+    scanf_s("%99[^\n]", originalText, sizeof(originalText));
+
+    strcpy_s(encryptedText, sizeof(encryptedText), originalText);  // Сохраняем оригинальный текст для вывода после расшифровки
+
+    encrypt(encryptedText, table);
+
+    printf("Зашифрованный текст: %s\n", encryptedText);
+
+    decrypt(encryptedText, table);
+
+    printf("Расшифрованный текст: %s\n", originalText);
+
+    return 0;
+}
